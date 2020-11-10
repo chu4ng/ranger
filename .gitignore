@@ -15,5 +15,7 @@
 
 /stuff/*
 
+tags
 .idea
 .pytest_cache
+
