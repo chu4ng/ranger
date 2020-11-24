@@ -57,6 +57,16 @@ class NameFilter(BaseFilter):
     def __str__(self):
         return "<Filter: name =~ /{pat}/>".format(pat=self.pattern)
 
+@stack_filter("tagged")
+class TaggedFilter(BaseFilter, FileManagerAware):
+    def __init__(self, cond=True):
+        self.cond = cond;
+        pass
+    def __call__(self, fobj):
+        return self.fm.tags.__contains__(fobj.realpath)
+
+    def __str__(self):
+        return "<Filter: tagged>"
 
 @stack_filter("mime")
 class MimeFilter(BaseFilter):
