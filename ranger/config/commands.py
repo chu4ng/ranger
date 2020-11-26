@@ -1749,8 +1749,7 @@ class flat(Command):
         except ValueError:
             level = self.quantifier
         if level is None:
-            self.fm.notify("Syntax: flat <level>", bad=True)
-            return
+            level = 0
         if level < -1:
             self.fm.notify("Need an integer number (-1, 0, 1, ...)", bad=True)
         self.fm.thisdir.unload()
