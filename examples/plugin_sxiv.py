@@ -1,12 +1,14 @@
 # Tested with ranger 1.9.3
 
 from __future__ import (absolute_import, division, print_function)
+from hashlib import sha512
 
 import subprocess
 
 from ranger.api.commands import Command
-from ranger.config.commands import scout
 from ranger.ext.rifle import Rifle
+from ranger.core.actions import Actions
+import ranger
 
 
 old_execute = Rifle.execute
@@ -14,21 +16,40 @@ old_execute = Rifle.execute
 class sxiv_select(Command):
     """:sxiv_select
 
-    Opens sxiv in thumb mode and marked files from him will be selected in ranger.
-    If one file was mark, ranger move cursot to this file.
+    Opens sxiv in thumb mode and if any files was mark from him will be selected in ranger.
+    If one file was mark, ranger move cursor to this file.
     If you have a few files selected in ranger and run this command, sxiv opens with this files.
+    Image and video are supported.
     """
     def execute(self):
         nl_sep = {'arg': '', 'split': '\n'}
         result_sep = nl_sep
+        sxiv_args = []
 
         selected_files = self.fm.thisdir.get_selection()
         if len(selected_files) > 1:
             images = selected_files
         else:
-            images = [f for f in self.fm.thisdir.files if f.image]
+            images = [f for f in self.fm.thisdir.files if f.image or f.video]
+        if not images:
+            self.fm.notify("Can't find images or videos.")
+            return
+
+        # Open sxiv with current file, if it is in the selected files.
+        if self.fm.thisfile in images:
+            image_index = images.index(self.fm.thisfile) + 1
+            sxiv_args += ['-n %d' % image_index]
+
+        # -o     Write list of all marked files to standard output when quitting.
+        # -t     Start in thumbnail mode.
+        # --     Separate flags and file list.
+        sxiv_args += ['-o', '-t', '--']
+        sxiv_args += ["/".join([ranger.args.cachedir, Actions.sha512_encode(i.path)])
+                      if i.video else i.relative_path
+                      for i in images]
+
+
         # Create subprocess for sxiv and pipeout in whatever
-        sxiv_args = ['-o', '-t', '--'] + [i.relative_path for i in images]
         process = subprocess.Popen(['sxiv'] + sxiv_args,
                 universal_newlines=True,
                 stdout=subprocess.PIPE)
@@ -37,14 +58,21 @@ class sxiv_select(Command):
         # Delete empty
         marked_files = list(filter(None, raw_out))
 
-        if len(marked_files) > 1:
-            for node_f in images:
-                if node_f.relative_path in marked_files:
-                    node_f.mark_set(True)
-            self.fm.ui.redraw_window()
-        elif len(marked_files) == 1:
-            scout_obj = scout("-ts " + marked_files[0])
-            scout_obj.execute()
+        self.fm.thisdir.mark_all(False)
+        files_to_mark = []
+        if len(marked_files) >= 1:
+            for fobj in images:
+                filename = "/".join([ranger.args.cachedir, Actions.sha512_encode(fobj.path)]) if fobj.video else fobj.relative_path
+                if filename in marked_files:
+                    if len(files_to_mark) == 0:
+                        self.fm.cd(fobj.path)
+                    if len(marked_files) > 1:
+                        files_to_mark.append(fobj)
+
+        for fobj in files_to_mark:
+            self.fm.thisdir.mark_item(fobj, True)
+
+        self.fm.ui.redraw_window()
 
 def sxiv_open_with(self, files, number=0, label=None, flags="", mimetype=None):
     """
