@@ -9,6 +9,7 @@ from logging import getLogger
 import atexit
 import locale
 import os.path
+import os
 import shutil
 import sys
 import tempfile
@@ -335,8 +336,7 @@ def parse_arguments():
         return path
 
     if args.clean:
-        from tempfile import mkdtemp
-        args.cachedir = mkdtemp(suffix='.ranger-cache')
+        args.cachedir = tempfile.mkdtemp(suffix='.ranger-cache')
         args.confdir = None
         args.datadir = None
 
@@ -370,7 +370,6 @@ COMMANDS_EXCLUDE = ['settings', 'notify']
 def load_settings(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         fm, clean):
     from ranger.core.actions import Actions
-    import ranger.core.shared
     import ranger.api.commands
     from ranger.config import commands as commands_default
 

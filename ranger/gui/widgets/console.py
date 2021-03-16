@@ -15,7 +15,7 @@ from ranger.gui.widgets import Widget
 from ranger.ext.direction import Direction
 from ranger.ext.widestring import uwid, WideString
 from ranger.container.history import History, HistoryEmptyException
-import ranger
+from ranger import args
 
 
 class Console(Widget):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -40,7 +40,7 @@ class Console(Widget):  # pylint: disable=too-many-instance-attributes,too-many-
         self.line = ''
         self.history = History(self.settings.max_console_history_size)
         # load history from files
-        if not ranger.args.clean:
+        if not args.clean:
             self.historypath = self.fm.datapath('history')
             if os.path.exists(self.historypath):
                 try:
@@ -72,7 +72,7 @@ class Console(Widget):  # pylint: disable=too-many-instance-attributes,too-many-
 
     def destroy(self):
         # save history to files
-        if ranger.args.clean or not self.settings.save_console_history:
+        if args.clean or not self.settings.save_console_history:
             return
         if self.historypath:
             try:

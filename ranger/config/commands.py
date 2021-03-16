@@ -92,7 +92,7 @@
 from __future__ import (absolute_import, division, print_function)
 
 from collections import deque
-import os
+import os.path
 import re
 
 from ranger import PY3
@@ -991,7 +991,6 @@ class eval_(Command):
 
     def execute(self):
         # The import is needed so eval() can access the ranger module
-        import ranger  # NOQA pylint: disable=unused-import,unused-variable
         if self.arg(1) == '-q':
             code = self.rest(2)
             quiet = True
